@@ -1,4 +1,4 @@
-module github.com/TBabs-codes/recipe_book
+module github.com/TBabs-codes/mySousChef
 
 go 1.23.3
 
