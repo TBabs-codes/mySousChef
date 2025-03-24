@@ -18,7 +18,7 @@ RETURNING id, created_at, updated_at, ingredients, instructions, notes, img_link
 `
 
 type CreateRecipeParams struct {
-	ID           interface{}
+	ID           string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	Ingredients  string
@@ -66,7 +66,7 @@ const deteleRecipe = `-- name: DeteleRecipe :exec
 DELETE FROM recipes WHERE id = ?
 `
 
-func (q *Queries) DeteleRecipe(ctx context.Context, id interface{}) error {
+func (q *Queries) DeteleRecipe(ctx context.Context, id string) error {
 	_, err := q.db.ExecContext(ctx, deteleRecipe, id)
 	return err
 }
@@ -219,7 +219,7 @@ const returnRecipe = `-- name: ReturnRecipe :one
 SELECT id, created_at, updated_at, ingredients, instructions, notes, img_link, user_id FROM recipes WHERE id = ?
 `
 
-func (q *Queries) ReturnRecipe(ctx context.Context, id interface{}) (Recipe, error) {
+func (q *Queries) ReturnRecipe(ctx context.Context, id string) (Recipe, error) {
 	row := q.db.QueryRowContext(ctx, returnRecipe, id)
 	var i Recipe
 	err := row.Scan(

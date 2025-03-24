@@ -17,7 +17,7 @@ RETURNING id, created_at, updated_at, premium, email, hashed_password
 `
 
 type CreateUserParams struct {
-	ID             interface{}
+	ID             string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	Premium        bool
@@ -61,7 +61,7 @@ SET premium = false
 WHERE id = ?
 `
 
-func (q *Queries) DowngradeUserMembership(ctx context.Context, id interface{}) error {
+func (q *Queries) DowngradeUserMembership(ctx context.Context, id string) error {
 	_, err := q.db.ExecContext(ctx, downgradeUserMembership, id)
 	return err
 }
@@ -88,7 +88,7 @@ const returnUserFromID = `-- name: ReturnUserFromID :one
 SELECT id, created_at, updated_at, premium, email, hashed_password FROM users WHERE id = ?
 `
 
-func (q *Queries) ReturnUserFromID(ctx context.Context, id interface{}) (User, error) {
+func (q *Queries) ReturnUserFromID(ctx context.Context, id string) (User, error) {
 	row := q.db.QueryRowContext(ctx, returnUserFromID, id)
 	var i User
 	err := row.Scan(
@@ -112,7 +112,7 @@ type UpdateUserInfoParams struct {
 	Email          string
 	HashedPassword string
 	UpdatedAt      time.Time
-	ID             interface{}
+	ID             string
 }
 
 func (q *Queries) UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) error {
@@ -131,7 +131,7 @@ SET premium = true
 WHERE id = ?
 `
 
-func (q *Queries) UpgradeUserMembership(ctx context.Context, id interface{}) error {
+func (q *Queries) UpgradeUserMembership(ctx context.Context, id string) error {
 	_, err := q.db.ExecContext(ctx, upgradeUserMembership, id)
 	return err
 }

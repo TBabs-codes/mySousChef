@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/TBabs-codes/recipe_book/internal/database"
+	"github.com/TBabs-codes/mySousChef/internal/database"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
@@ -35,9 +35,11 @@ type App struct {
 	apiCfg apiConfig
 }
 
-//apiConfig contains db connection
+// apiConfig contains db connection
 type apiConfig struct {
-	DB *database.Queries
+	DB          *database.Queries
+	JWTSecret   string
+	JWT_Timeout time.Duration
 }
 
 func (a *App) Initialize() {
@@ -57,6 +59,9 @@ func (a *App) Initialize() {
 	}
 
 	a.apiCfg.DB = database.New(db)
+
+	a.apiCfg.JWTSecret = os.Getenv("JWT_SECRET")
+	a.apiCfg.JWT_Timeout = 24 * time.Hour
 }
 
 func (a *App) setupRoutes() {
@@ -90,8 +95,8 @@ func (a *App) setupRoutes() {
 	v1Router.Get("/healthz", handlerReadiness)
 
 	if a.apiCfg.DB != nil {
-		v1Router.Post("/users", a.apiCfg.handlerUsersCreate)
-		v1Router.Get("/users", a.apiCfg.middlewareAuth(a.apiCfg.handlerUsersGet))
+		v1Router.Post("/users", a.apiCfg.handlerCreateUser)
+		//v1Router.Get("/users", a.apiCfg.middlewareAuth(a.apiCfg.handlerLogin))
 		// v1Router.Get("/notes", a.apiCfg.middlewareAuth(apiCfg.handlerNotesGet))
 		// v1Router.Post("/notes", a.apiCfg.middlewareAuth(apiCfg.handlerNotesCreate))
 	}

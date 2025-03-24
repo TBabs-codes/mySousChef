@@ -5,7 +5,7 @@ CREATE TABLE refresh_tokens (
     updated_at TIMESTAMP NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     revoked_at TIMESTAMP,
-    user_id UUID NOT NULL,
+    user_id TEXT NOT NULL,
     FOREIGN KEY (user_id)
         REFERENCES users(id)
         ON DELETE CASCADE

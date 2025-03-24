@@ -10,7 +10,7 @@ import (
 )
 
 type Recipe struct {
-	ID           interface{}
+	ID           string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	Ingredients  string
@@ -26,11 +26,11 @@ type RefreshToken struct {
 	UpdatedAt time.Time
 	ExpiresAt time.Time
 	RevokedAt sql.NullTime
-	UserID    interface{}
+	UserID    string
 }
 
 type User struct {
-	ID             interface{}
+	ID             string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	Premium        bool

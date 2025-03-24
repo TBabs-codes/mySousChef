@@ -21,7 +21,7 @@ type CreateRefreshTokenParams struct {
 	Token     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	UserID    interface{}
+	UserID    string
 	ExpiresAt time.Time
 	RevokedAt sql.NullTime
 }
