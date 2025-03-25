@@ -44,7 +44,6 @@ type apiConfig struct {
 
 func (a *App) Initialize() {
 	a.Router = chi.NewRouter()
-	a.setupRoutes()
 
 	a.Server = &http.Server{
 		Addr:         ":" + a.Config.Port,
@@ -57,6 +56,12 @@ func (a *App) Initialize() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	err = db.Ping()
+	if err != nil {
+		log.Fatal("Error pinging the database:", err)
+	}
+
 
 	a.apiCfg.DB = database.New(db)
 
@@ -95,8 +100,8 @@ func (a *App) setupRoutes() {
 	v1Router.Get("/healthz", handlerReadiness)
 
 	if a.apiCfg.DB != nil {
-		v1Router.Post("/users", a.apiCfg.handlerCreateUser)
-		//v1Router.Get("/users", a.apiCfg.middlewareAuth(a.apiCfg.handlerLogin))
+		v1Router.Post("/register", a.apiCfg.handlerCreateUser)
+		v1Router.Post("/login", a.apiCfg.handlerLoginUser)
 		// v1Router.Get("/notes", a.apiCfg.middlewareAuth(apiCfg.handlerNotesGet))
 		// v1Router.Post("/notes", a.apiCfg.middlewareAuth(apiCfg.handlerNotesCreate))
 	}
@@ -133,5 +138,6 @@ func main() {
 	}
 
 	app.Initialize()
+	app.setupRoutes()
 	app.Run()
 }

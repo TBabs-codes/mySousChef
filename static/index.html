@@ -247,8 +247,36 @@
                 return;
             }
             
-            // Here you would typically send the data to your server
-            console.log('Creating user:', { email, password });
+            // Prepare the data to be sent
+            const userData = {
+                email: email,
+                password: password
+            };
+
+            // Send the data to the server using Fetch API
+            fetch('/v1/register', {
+                method: 'POST', // HTTP method (POST)
+                headers: {
+                    'Content-Type': 'application/json', // We are sending JSON data
+                },
+                body: JSON.stringify(userData) // Convert the user data to JSON
+            })
+            .then(response => response.json()) // Parse the JSON response from the server
+            .then(data => {
+                // Handle the response from the server
+                if (data.success) {
+                    alert('Account created successfully!');
+                    // Close the modal
+                    createUserModal.style.display = 'none';
+                } else {
+                    alert('Error: ' + data.message); // Show the error message from the server
+                }
+            })
+            .catch(error => {
+                // Handle any errors that occurred during the request
+                console.error('Error:', error);
+                alert('An error occurred. Please try again later.');
+            });
             
             // For demo purposes, just close the modal
             createUserModal.style.display = 'none';
@@ -260,8 +288,36 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
+            // Prepare the data to be sent
+            const userData = {
+                email: email,
+                password: password
+            };
+            
             // Here you would typically send the data to your server
-            console.log('Signing in:', { email, password });
+            fetch('/v1/login', {
+                method: 'POST', // HTTP method (POST)
+                headers: {
+                    'Content-Type': 'application/json', // We are sending JSON data
+                },
+                body: JSON.stringify(userData) // Convert the user data to JSON
+            })
+            .then(response => response.json()) // Parse the JSON response from the server
+            .then(data => {
+                // Handle the response from the server
+                if (data.success) {
+                    alert('Account created successfully!');
+                    // Close the modal
+                    createUserModal.style.display = 'none';
+                } else {
+                    alert('Error: ' + data.message); // Show the error message from the server
+                }
+            })
+            .catch(error => {
+                // Handle any errors that occurred during the request
+                console.error('Error:', error);
+                alert('An error occurred. Please try again later.');
+            });
             
             // For demo purposes, just close the modal
             signInModal.style.display = 'none';
