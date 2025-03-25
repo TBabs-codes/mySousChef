@@ -293,7 +293,7 @@
                 email: email,
                 password: password
             };
-            
+
             // Here you would typically send the data to your server
             fetch('/v1/login', {
                 method: 'POST', // HTTP method (POST)
@@ -306,9 +306,7 @@
             .then(data => {
                 // Handle the response from the server
                 if (data.success) {
-                    alert('Account created successfully!');
-                    // Close the modal
-                    createUserModal.style.display = 'none';
+                    window.location.href = 'static/dashboard.html';
                 } else {
                     alert('Error: ' + data.message); // Show the error message from the server
                 }

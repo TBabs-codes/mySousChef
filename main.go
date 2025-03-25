@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/TBabs-codes/mySousChef/internal/database"
@@ -62,7 +65,6 @@ func (a *App) Initialize() {
 		log.Fatal("Error pinging the database:", err)
 	}
 
-
 	a.apiCfg.DB = database.New(db)
 
 	a.apiCfg.JWTSecret = os.Getenv("JWT_SECRET")
@@ -79,6 +81,7 @@ func (a *App) setupRoutes() {
 		MaxAge:           300,
 	}))
 
+	//Serves start page
 	a.Router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -91,6 +94,33 @@ func (a *App) setupRoutes() {
 			return
 		}
 		defer f.Close()
+		if _, err := io.Copy(w, f); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	//Helps server the other pages of the app
+	// Add this to your router setup
+	a.Router.Get("/static/*", func(w http.ResponseWriter, r *http.Request) {
+		// Remove the leading "/static/" from the path
+		filePath := strings.TrimPrefix(r.URL.Path, "/static/")
+
+		// Open the file from the embedded filesystem
+		f, err := staticFiles.Open("static/" + filePath)
+		if err != nil {
+			// If file not found, return a 404 error
+			http.NotFound(w, r)
+			return
+		}
+		defer f.Close()
+
+		// Determine the content type based on file extension
+		contentType := mime.TypeByExtension(filepath.Ext(filePath))
+		if contentType != "" {
+			w.Header().Set("Content-Type", contentType)
+		}
+
+		// Copy the file contents to the response
 		if _, err := io.Copy(w, f); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-//Creates user
+// Creates user
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type userCreationReq struct {
 		Password string `json:"password"`
@@ -63,7 +63,6 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-
 	//Create JWT
 	jwt, err := auth.MakeJWT(uuid.MustParse(user.ID), cfg.JWTSecret, cfg.JWT_Timeout)
 	if err != nil {
@@ -73,12 +72,11 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 
 	//Add JWT to DB
 	refresh_token, err := cfg.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
-		Token: jwt,
+		Token:     jwt,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		UserID: user.ID,
+		UserID:    user.ID,
 		ExpiresAt: time.Now().Add(24 * time.Hour),
-
 	})
 	if err != nil {
 		log.Printf("Error creating refresh token: %s", err)
@@ -86,8 +84,7 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	//Update response header to include JWT
-	w.Header().Set("Authorization", "Bearer " + refresh_token.Token)
-
+	w.Header().Set("Authorization", "Bearer "+refresh_token.Token)
 
 	respBody := UserCreationResp{
 		ID:         uuid.MustParse(user.ID),
@@ -96,7 +93,7 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		Email:      user.Email,
 		Premium:    user.Premium,
 	}
-	
+
 	data, err := json.Marshal(respBody)
 	if err != nil {
 		log.Printf("Error marshalling JSON: %s", err)
@@ -110,7 +107,7 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 
 }
 
-//Logins User
+// Logins User
 func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 	type userLoginReq struct {
 		Password string `json:"password"`
@@ -149,12 +146,11 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 
 	//Add JWT to DB
 	refresh_token, err := cfg.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
-		Token: jwt,
+		Token:     jwt,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		UserID: user.ID,
+		UserID:    user.ID,
 		ExpiresAt: time.Now().Add(24 * time.Hour),
-
 	})
 	if err != nil {
 		log.Printf("Error creating refresh token: %s", err)
@@ -162,8 +158,7 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Update response header to include JWT
-	w.Header().Set("Authorization", "Bearer " + refresh_token.Token)
-
+	w.Header().Set("Authorization", "Bearer "+refresh_token.Token)
 
 	//Preparing Response Body
 	type UserLoginResp struct {
@@ -172,6 +167,7 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 		Updated_at time.Time `json:"updated_at"`
 		Email      string    `json:"email"`
 		Premium    bool      `json:"premium"`
+		Success    bool      `json:"success"`
 	}
 
 	respBody := UserLoginResp{
@@ -180,8 +176,9 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 		Updated_at: user.UpdatedAt,
 		Email:      user.Email,
 		Premium:    user.Premium,
+		Success:    true,
 	}
-	
+
 	data, err := json.Marshal(respBody)
 	if err != nil {
 		log.Printf("Error marshalling JSON: %s", err)

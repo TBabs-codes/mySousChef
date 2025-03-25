@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recipe Book Dashboard</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            background-color: #f4f1de;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .recipe-book {
+            width: 800px;
+            height: 500px;
+            background-color: #fff;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-radius: 10px;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+        .book-page {
+            width: 50%;
+            padding: 30px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .left-page {
+            background-color: #f9f5f0;
+            border-right: 2px solid #e0d8c8;
+        }
+        .right-page {
+            background-color: #ffffff;
+        }
+        .recipe-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .recipe-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .book-binding {
+            width: 30px;
+            background-color: #8b4513;
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            transform: translateX(-50%);
+        }
+        .btn {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-add {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .btn-edit {
+            background-color: #3498db;
+            color: white;
+        }
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .btn-next {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: #34495e;
+            color: white;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 400px;
+        }
+        input, textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="recipe-book">
+        <div class="book-binding"></div>
+        <div class="book-page left-page">
+            <h2>Recipe List</h2>
+            <div class="recipe-list" id="recipeList">
+                <!-- Recipes will be dynamically added here -->
+            </div>
+            <button class="btn btn-add" onclick="openAddRecipeModal()">Add Recipe</button>
+        </div>
+        <div class="book-page right-page">
+            <div id="currentRecipe">
+                <h2>Select a Recipe</h2>
+                <p>Choose a recipe from the list to view details.</p>
+            </div>
+            <button class="btn btn-next" onclick="nextRecipe()">Next Recipe →</button>
+        </div>
+    </div>
+
+    <!-- Add/Edit Recipe Modal -->
+    <div id="recipeModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add New Recipe</h2>
+            <input type="text" id="recipeName" placeholder="Recipe Name">
+            <textarea id="recipeIngredients" placeholder="Ingredients"></textarea>
+            <textarea id="recipeInstructions" placeholder="Instructions"></textarea>
+            <button class="btn btn-add" onclick="saveRecipe()">Save Recipe</button>
+            <button class="btn btn-delete" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let recipes = [
+            {
+                name: "Chocolate Chip Cookies",
+                ingredients: "- 2 1/4 cups all-purpose flour\n- 1 tsp baking soda\n- 1 cup butter\n- 3/4 cup sugar\n- 3/4 cup brown sugar\n- 2 eggs\n- 2 cups chocolate chips",
+                instructions: "1. Preheat oven to 375°F\n2. Mix dry ingredients\n3. Cream butter and sugars\n4. Add eggs\n5. Combine dry and wet ingredients\n6. Add chocolate chips\n7. Bake 9-11 minutes"
+            },
+            {
+                name: "Tomato Pasta",
+                ingredients: "- 1 lb pasta\n- 4 tomatoes\n- 3 garlic cloves\n- Olive oil\n- Fresh basil\n- Parmesan cheese",
+                instructions: "1. Boil pasta\n2. Chop tomatoes and garlic\n3. Sauté garlic in olive oil\n4. Add tomatoes\n5. Mix with pasta\n6. Top with basil and cheese"
+            }
+        ];
+
+        let currentRecipeIndex = 0;
+
+        function displayRecipeList() {
+            const recipeList = document.getElementById('recipeList');
+            recipeList.innerHTML = '';
+            recipes.forEach((recipe, index) => {
+                const recipeItem = document.createElement('div');
+                recipeItem.classList.add('recipe-item');
+                recipeItem.innerHTML = `
+                    ${recipe.name}
+                    <div>
+                        <button class="btn btn-edit" onclick="editRecipe(${index})">Edit</button>
+                        <button class="btn btn-delete" onclick="deleteRecipe(${index})">Delete</button>
+                    </div>
+                `;
+                recipeList.appendChild(recipeItem);
+            });
+        }
+
+        function displayCurrentRecipe() {
+            const currentRecipeDiv = document.getElementById('currentRecipe');
+            if (recipes.length > 0) {
+                const recipe = recipes[currentRecipeIndex];
+                currentRecipeDiv.innerHTML = `
+                    <h2>${recipe.name}</h2>
+                    <h3>Ingredients:</h3>
+                    <pre>${recipe.ingredients}</pre>
+                    <h3>Instructions:</h3>
+                    <pre>${recipe.instructions}</pre>
+                `;
+            } else {
+                currentRecipeDiv.innerHTML = '<p>No recipes available. Add a recipe to get started!</p>';
+            }
+        }
+
+        function nextRecipe() {
+            if (recipes.length > 0) {
+                currentRecipeIndex = (currentRecipeIndex + 1) % recipes.length;
+                displayCurrentRecipe();
+            }
+        }
+
+        function openAddRecipeModal() {
+            const modal = document.getElementById('recipeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            modalTitle.textContent = 'Add New Recipe';
+            
+            document.getElementById('recipeName').value = '';
+            document.getElementById('recipeIngredients').value = '';
+            document.getElementById('recipeInstructions').value = '';
+            
+            modal.style.display = 'flex';
+        }
+
+        function editRecipe(index) {
+            const modal = document.getElementById('recipeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            modalTitle.textContent = 'Edit Recipe';
+            
+            const recipe = recipes[index];
+            document.getElementById('recipeName').value = recipe.name;
+            document.getElementById('recipeIngredients').value = recipe.ingredients;
+            document.getElementById('recipeInstructions').value = recipe.instructions;
+            
+            // Store the index of the recipe being edited
+            modal.dataset.editIndex = index;
+            
+            modal.style.display = 'flex';
+        }
+
+        function saveRecipe() {
+            const name = document.getElementById('recipeName').value;
+            const ingredients = document.getElementById('recipeIngredients').value;
+            const instructions = document.getElementById('recipeInstructions').value;
+
+            const modal = document.getElementById('recipeModal');
+            const editIndex = modal.dataset.editIndex;
+
+            if (editIndex !== undefined) {
+                // Editing existing recipe
+                recipes[editIndex] = { name, ingredients, instructions };
+                delete modal.dataset.editIndex;
+            } else {
+                // Adding new recipe
+                recipes.push({ name, ingredients, instructions });
+            }
+
+            displayRecipeList();
+            displayCurrentRecipe();
+            closeModal();
+        }
+
+        function deleteRecipe(index) {
+            if (confirm('Are you sure you want to delete this recipe?')) {
+                recipes.splice(index, 1);
+                displayRecipeList();
+                
+                // Reset current recipe index if needed
+                if (currentRecipeIndex >= recipes.length) {
+                    currentRecipeIndex = 0;
+                }
+                
+                displayCurrentRecipe();
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('recipeModal');
+            modal.style.display = 'none';
+            delete modal.dataset.editIndex;
+        }
+
+        // Initialize the page
+        displayRecipeList();
+        displayCurrentRecipe();
+    </script>
+</body>
+</html>

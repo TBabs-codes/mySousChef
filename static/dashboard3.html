@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recipe Book Dashboard</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            background-color: #f4f1de;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .recipe-book {
+            width: 800px;
+            height: 500px;
+            background-color: #fff;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-radius: 10px;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+        .book-page {
+            width: 50%;
+            padding: 30px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .left-page {
+            background-color: #f9f5f0;
+            border-right: 2px solid #e0d8c8;
+        }
+        .right-page {
+            background-color: #ffffff;
+        }
+        .recipe-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .recipe-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .book-binding {
+            width: 30px;
+            background-color: #8b4513;
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            transform: translateX(-50%);
+        }
+        .btn {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-add {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .btn-edit {
+            background-color: #3498db;
+            color: white;
+        }
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .btn-next {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: #34495e;
+            color: white;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 400px;
+        }
+        input, textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .recipe-image {
+            max-width: 100%;
+            max-height: 200px;
+            margin: 10px 0;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        #imageUpload {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="recipe-book">
+        <div class="book-binding"></div>
+        <div class="book-page left-page">
+            <h2>Recipe List</h2>
+            <div class="recipe-list" id="recipeList">
+                <!-- Recipes will be dynamically added here -->
+            </div>
+            <button class="btn btn-add" onclick="openAddRecipeModal()">Add Recipe</button>
+        </div>
+        <div class="book-page right-page">
+            <div id="currentRecipe">
+                <h2>Select a Recipe</h2>
+                <p>Choose a recipe from the list to view details.</p>
+            </div>
+            <button class="btn btn-next" onclick="nextRecipe()">Next Recipe →</button>
+        </div>
+    </div>
+
+    <!-- Add/Edit Recipe Modal -->
+    <div id="recipeModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add New Recipe</h2>
+            <input type="text" id="recipeName" placeholder="Recipe Name">
+            <input type="file" id="imageUpload" accept="image/*">
+            <img id="imagePreview" class="recipe-image" style="display:none;">
+            <textarea id="recipeIngredients" placeholder="Ingredients"></textarea>
+            <textarea id="recipeInstructions" placeholder="Instructions"></textarea>
+            <button class="btn btn-add" onclick="saveRecipe()">Save Recipe</button>
+            <button class="btn btn-delete" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let recipes = []; // Will be populated from server
+        let currentRecipeIndex = 0;
+        let currentImageFile = null;
+
+        // Fetch recipes from server when page loads
+        document.addEventListener('DOMContentLoaded', fetchRecipes);
+
+        function fetchRecipes() {
+            fetch('/recipes')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch recipes');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    recipes = data;
+                    displayRecipeList();
+                    displayCurrentRecipe();
+                })
+                .catch(error => {
+                    console.error('Error fetching recipes:', error);
+                    alert('Failed to load recipes. Please try again later.');
+                });
+        }
+
+        // Image preview functionality
+        document.getElementById('imageUpload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const imagePreview = document.getElementById('imagePreview');
+            
+            if (file) {
+                currentImageFile = file;
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                }
+                
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.style.display = 'none';
+                currentImageFile = null;
+            }
+        });
+
+        function saveRecipe() {
+            const name = document.getElementById('recipeName').value;
+            const ingredients = document.getElementById('recipeIngredients').value;
+            const instructions = document.getElementById('recipeInstructions').value;
+
+            // Create FormData for multipart/form-data
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('ingredients', ingredients);
+            formData.append('instructions', instructions);
+            
+            // Append image if one was selected
+            if (currentImageFile) {
+                formData.append('image', currentImageFile);
+            }
+
+            // Send recipe to server
+            fetch('/recipes', {
+                method: 'POST',
+                body: formData // No need to set Content-Type, browser will set it
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Refresh recipe list
+                fetchRecipes();
+                closeModal();
+            })
+            .catch(error => {
+                console.error('Error saving recipe:', error);
+                alert('Failed to save recipe. Please try again.');
+            });
+        }
+
+        function displayRecipeList() {
+            const recipeList = document.getElementById('recipeList');
+            recipeList.innerHTML = '';
+            recipes.forEach((recipe, index) => {
+                const recipeItem = document.createElement('div');
+                recipeItem.classList.add('recipe-item');
+                recipeItem.innerHTML = `
+                    ${recipe.name}
+                    <div>
+                        <button class="btn btn-edit" onclick="editRecipe(${index})">Edit</button>
+                        <button class="btn btn-delete" onclick="deleteRecipe(${index})">Delete</button>
+                    </div>
+                `;
+                recipeList.appendChild(recipeItem);
+            });
+        }
+
+        function displayCurrentRecipe() {
+            const currentRecipeDiv = document.getElementById('currentRecipe');
+            if (recipes.length > 0) {
+                const recipe = recipes[currentRecipeIndex];
+                let imageHtml = recipe.imageUrl 
+                    ? `<img src="${recipe.imageUrl}" class="recipe-image" alt="${recipe.name}">`
+                    : '';
+                
+                currentRecipeDiv.innerHTML = `
+                    <h2>${recipe.name}</h2>
+                    ${imageHtml}
+                    <h3>Ingredients:</h3>
+                    <pre>${recipe.ingredients}</pre>
+                    <h3>Instructions:</h3>
+                    <pre>${recipe.instructions}</pre>
+                `;
+            } else {
+                currentRecipeDiv.innerHTML = '<p>No recipes available. Add a recipe to get started!</p>';
+            }
+        }
+
+        function editRecipe(index) {
+            const modal = document.getElementById('recipeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            modalTitle.textContent = 'Edit Recipe';
+            
+            const recipe = recipes[index];
+            document.getElementById('recipeName').value = recipe.name;
+            document.getElementById('recipeIngredients').value = recipe.ingredients;
+            document.getElementById('recipeInstructions').value = recipe.instructions;
+            
+            // Preview existing image if available
+            const imagePreview = document.getElementById('imagePreview');
+            if (recipe.imageUrl) {
+                imagePreview.src = recipe.imageUrl;
+                imagePreview.style.display = 'block';
+            } else {
+                imagePreview.style.display = 'none';
+            }
+            
+            // Store the index of the recipe being edited
+            modal.dataset.editIndex = index;
+            
+            modal.style.display = 'flex';
+        }
+
+        function deleteRecipe(index) {
+            const recipeId = recipes[index].id; // Assuming each recipe has a unique ID from the server
+            
+            fetch(`/recipes/${recipeId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to delete recipe');
+                }
+                return response.json();
+            })
+            .then(() => {
+                fetchRecipes(); // Refresh the recipe list
+            })
+            .catch(error => {
+                console.error('Error deleting recipe:', error);
+                alert('Failed to delete recipe. Please try again.');
+            });
+        }
+
+        function nextRecipe() {
+            if (recipes.length > 0) {
+                currentRecipeIndex = (currentRecipeIndex + 1) % recipes.length;
+                displayCurrentRecipe();
+            }
+        }
+
+        function openAddRecipeModal() {
+            const modal = document.getElementById('recipeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            modalTitle.textContent = 'Add New Recipe';
+            
+            // Reset form
+            document.getElementById('recipeName').value = '';
+            document.getElementById('recipeIngredients').value = '';
+            document.getElementById('recipeInstructions').value = '';
+            document.getElementById('imageUpload').value = ''; // Clear file input
+            
+            const imagePreview = document.getElementById('imagePreview');
+            imagePreview.style.display = 'none';
+            imagePreview.src = '';
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('recipeModal');
+            modal.style.display = 'none';
+            delete modal.dataset.editIndex;
+        }
+    </script>
+</body>
+</html>
